@@ -14,6 +14,9 @@ const DB_FILE = './data.json';
 app.use(express.json());
 app.use(express.static('public'));
 
+// Serve index.html at root
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
 // ── JSON "database" ────────────────────────────────────────────────────────────
 function loadDB() {
   if (!fs.existsSync(DB_FILE)) return { posts: [], history: [], nextId: 1 };
@@ -200,6 +203,7 @@ cron.schedule('* * * * *', () => {
   }
 });
 
+// ── Keep-alive ─────────────────────────────────────────────────────────────────
 app.get('/ping', (req, res) => res.json({ ok: true, time: currentTimeStr(), today: todayStr() }));
 
 app.listen(PORT, () => {
