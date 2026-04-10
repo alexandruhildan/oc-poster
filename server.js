@@ -203,6 +203,14 @@ cron.schedule('* * * * *', () => {
   }
 });
 
+
+// ── Auth ───────────────────────────────────────────────────────────────────────
+app.post('/api/auth', (req, res) => {
+  const { pin } = req.body;
+  const correctPin = process.env.APP_PIN || '1234';
+  res.json({ ok: pin === correctPin });
+});
+
 // ── Keep-alive ─────────────────────────────────────────────────────────────────
 app.get('/ping', (req, res) => res.json({ ok: true, time: currentTimeStr(), today: todayStr() }));
 
