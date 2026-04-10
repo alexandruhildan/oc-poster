@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OC Poster">
+  <meta name="theme-color" content="#c0392b">
+  <title>OC Poster</title>
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --red: #c0392b;
+      --red-dark: #96281b;
+      --red-light: #e74c3c;
+      --bg: #f4f4f4;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --text-muted: #666;
+      --border: #e0e0e0;
+      --green: #27ae60;
+      --blue: #2980b9;
+      --orange: #e67e22;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--red);
+      color: white;
+      padding: 16px 20px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    header p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      background: white;
+      border-bottom: 2px solid var(--border);
+      position: sticky;
+      top: 64px;
+      z-index: 99;
+    }
+    .tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      color: var(--red);
+      border-bottom-color: var(--red);
+    }
+
+    /* ── Sections ── */
+    section { display: none; padding: 16px; }
+    section.active { display: block; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--red);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── Form elements ── */
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+
+    input[type="text"], input[type="url"], input[type="time"], textarea, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--text);
+      background: white;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--red); }
+    textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+    .form-group { margin-bottom: 14px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      -webkit-user-select: none;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--red); color: white; }
+    .btn-primary:hover { background: var(--red-dark); }
+    .btn-secondary { background: #f0f0f0; color: var(--text); }
+    .btn-green { background: var(--green); color: white; }
+    .btn-blue { background: var(--blue); color: white; }
+    .btn-orange { background: var(--orange); color: white; }
+    .btn-danger { background: #fee2e2; color: #c0392b; }
+    .btn-full { width: 100%; }
+    .btn-sm { padding: 8px 12px; font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Generate row ── */
+    .generate-row {
+      display: flex;
+      gap: 8px;
+    }
+    .generate-row input { flex: 1; }
+    .generate-row .btn { white-space: nowrap; flex-shrink: 0; }
+
+    /* ── Time picker ── */
+    .time-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .time-row input[type="time"] { flex: 1; }
+    .quick-times {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .quick-time {
+      padding: 6px 10px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .quick-time:hover { background: var(--red); color: white; }
+
+    /* ── Description with char count ── */
+    .desc-wrap { position: relative; }
+    .char-count {
+      position: absolute;
+      bottom: 8px;
+      right: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ── Loading spinner ── */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Queue items ── */
+    .queue-item {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 10px;
+      overflow: hidden;
+      border-left: 4px solid var(--red);
+      transition: all 0.2s;
+    }
+    .queue-item.soon { border-left-color: var(--orange); }
+    .queue-item.editing { border-left-color: var(--blue); box-shadow: 0 0 0 2px var(--blue); }
+
+    .qi-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 14px;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .qi-time {
+      background: var(--red);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .queue-item.soon .qi-time { background: var(--orange); }
+
+    .qi-desc {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.4;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .qi-url {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .qi-actions {
+      display: flex;
+      border-top: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .qi-action {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: white;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .qi-action:not(:last-child) { border-right: 1px solid var(--border); }
+    .qi-action.post { color: var(--green); }
+    .qi-action.post:active { background: #e8f8ee; }
+    .qi-action.edit { color: var(--blue); }
+    .qi-action.edit:active { background: #e8f3fd; }
+    .qi-action.delete { color: var(--red); }
+    .qi-action.delete:active { background: #fee2e2; }
+
+    .qi-edit-form {
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      display: none;
+      background: #fafafa;
+    }
+    .qi-edit-form.open { display: block; }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty h3 { font-size: 16px; margin-bottom: 6px; }
+    .empty p { font-size: 14px; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 999;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: var(--green); }
+    .toast.error { background: var(--red); }
+
+    /* ── History ── */
+    .hist-item {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--green);
+    }
+    .hist-time { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .hist-desc { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .hist-url { font-size: 11px; color: var(--blue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── Status badge ── */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      display: inline-block;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── Badge count ── */
+    .badge {
+      background: var(--red);
+      color: white;
+      border-radius: 12px;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    /* ── Info box ── */
+    .info-box {
+      background: #fff8e1;
+      border: 1px solid #ffd54f;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #795548;
+      margin-bottom: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div>
+      <h1>📰 OC Poster</h1>
+      <p>Observator Constanța &bull; <span class="status-dot"></span> <span id="clock">--:--</span></p>
+    </div>
+    <div id="queueBadge" style="display:none">
+      <span class="badge" id="badgeCount">0</span>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('add')">➕ Adaugă</div>
+  <div class="tab" onclick="switchTab('queue')" id="tabQueue">📋 Coadă</div>
+  <div class="tab" onclick="switchTab('history')">✅ Istoric</div>
+</div>
+
+<!-- ── ADD TAB ── -->
+<section id="tab-add" class="active">
+  <div class="card">
+    <div class="card-title">🔗 Link articol</div>
+
+    <div class="form-group">
+      <label>URL Articol</label>
+      <div class="generate-row">
+        <input type="url" id="urlInput" placeholder="https://observatorconstanta.ro/..." autocomplete="off" autocorrect="off" autocapitalize="off">
+        <button class="btn btn-primary" id="generateBtn" onclick="generateDescription()">
+          ✨ Generează
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Descriere Facebook <span style="color:var(--text-muted);font-weight:400">(editează dacă vrei)</span></label>
+      <div class="desc-wrap">
+        <textarea id="descInput" placeholder="Descrierea clickbait va apărea aici după generare..." oninput="updateCharCount(this)" rows="3"></textarea>
+        <span class="char-count" id="charCount">0</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Ora programată</label>
+      <div class="time-row">
+        <input type="time" id="timeInput">
+      </div>
+      <div class="quick-times" id="quickTimes"></div>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="addToQueue()" style="margin-top:4px;padding:15px">
+      📥 Adaugă în coadă
+    </button>
+  </div>
+
+  <div class="info-box">
+    💡 <strong>Sfat:</strong> Lipește link-ul, apasă Generează, verifică textul și alege ora. Postările se trimit automat!
+  </div>
+</section>
+
+<!-- ── QUEUE TAB ── -->
+<section id="tab-queue">
+  <div id="queueList"></div>
+</section>
+
+<!-- ── HISTORY TAB ── -->
+<section id="tab-history">
+  <div id="historyList"></div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let queue = [];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+  startClock();
+  loadQueue();
+  setSmartTime();
+  renderQuickTimes();
+  setInterval(loadQueue, 30000); // refresh every 30s
+});
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+function startClock() {
+  function tick() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  }
+  tick();
+  setInterval(tick, 10000);
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['add','queue','history'][i] === tab);
+  });
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  if (tab === 'history') loadHistory();
+  if (tab === 'queue') renderQueue();
+}
+
+// ── Smart time suggestion ─────────────────────────────────────────────────────
+function setSmartTime() {
+  const now = new Date();
+  let h = now.getHours();
+  let m = now.getMinutes();
+
+  // Next full hour
+  h = m >= 1 ? h + 1 : h;
+  if (h >= 24) h = 0;
+
+  document.getElementById('timeInput').value = `${String(h).padStart(2,'0')}:00`;
+}
+
+function renderQuickTimes() {
+  const now = new Date();
+  let h = now.getHours();
+  const m = now.getMinutes();
+
+  const times = [];
+  // Next :00 and :30 slots for next 5 hours
+  let startH = m >= 1 ? h + 1 : h;
+  for (let i = 0; i < 5; i++) {
+    const hh = (startH + i) % 24;
+    times.push(`${String(hh).padStart(2,'0')}:00`);
+    times.push(`${String(hh).padStart(2,'0')}:30`);
+  }
+
+  const container = document.getElementById('quickTimes');
+  container.innerHTML = times.slice(0, 8).map(t =>
+    `<button class="quick-time" onclick="setTime('${t}')">${t}</button>`
+  ).join('');
+}
+
+function setTime(t) {
+  document.getElementById('timeInput').value = t;
+  document.querySelectorAll('.quick-time').forEach(b => {
+    b.style.background = b.textContent === t ? 'var(--red)' : '';
+    b.style.color = b.textContent === t ? 'white' : '';
+  });
+}
+
+// ── Generate description ──────────────────────────────────────────────────────
+async function generateDescription() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { toast('Pune mai întâi un URL!', 'error'); return; }
+
+  const btn = document.getElementById('generateBtn');
+  btn.innerHTML = '<div class="spinner"></div>';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${API}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('descInput').value = data.description;
+    updateCharCount(document.getElementById('descInput'));
+    toast('✨ Descriere generată!', 'success');
+  } catch (e) {
+    toast('Eroare: ' + e.message, 'error');
+  } finally {
+    btn.innerHTML = '✨ Generează';
+    btn.disabled = false;
+  }
+}
+
+function updateCharCount(el) {
+  const count = el.value.length;
+  const span = document.getElementById('charCount');
+  if (span) {
+    span.textContent = count;
+    span.style.color = count > 120 ? 'var(--red)' : 'var(--text-muted)';
+  }
+}
+
+// ── Add to queue ──────────────────────────────────────────────────────────────
+async function addToQueue() {
+  const url = document.getElementById('urlInput').value.trim();
+  const description = document.getElementById('descInput').value.trim();
+  const sched_time = document.getElementById('timeInput').value;
+
+  if (!url) { toast('URL lipsă!', 'error'); return; }
+  if (!description) { toast('Generează sau scrie o descriere!', 'error'); return; }
+  if (!sched_time) { toast('Alege ora!', 'error'); return; }
+
+  // Check for conflicts
+  const conflict = queue.find(p => p.sched_time === sched_time);
+  if (conflict && !confirm(`Există deja un post la ${sched_time}. Continui?`)) return;
+
+  try {
+    const r = await fetch(`${API}/api/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, description, sched_time })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    // Clear form
+    document.getElementById('urlInput').value = '';
+    document.getElementById('descInput').value = '';
+    updateCharCount(document.getElementById('descInput'));
+    setSmartTime();
+    renderQuickTimes();
+
+    await loadQueue();
+    toast(`✅ Programat la ${sched_time}!`, 'success');
+    switchTab('queue');
+  } catch(e) {
+    toast('Eroare: ' + e.message, 'error');
+  }
+}
+
+// ── Load & render queue ───────────────────────────────────────────────────────
+async function loadQueue() {
+  try {
+    const r = await fetch(`${API}/api/queue`);
+    queue = await r.json();
+    renderQueue();
+    updateBadge();
+  } catch(e) {
+    console.error('Queue load error:', e);
+  }
+}
+
+function updateBadge() {
+  const badge = document.getElementById('queueBadge');
+  const count = document.getElementById('badgeCount');
+  if (queue.length > 0) {
+    badge.style.display = 'block';
+    count.textContent = queue.length;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderQueue() {
+  const container = document.getElementById('queueList');
+  if (!queue.length) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">📭</div>
+        <h3>Coada e goală</h3>
+        <p>Adaugă articole din tab-ul "Adaugă"</p>
+      </div>`;
+    return;
+  }
+
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  container.innerHTML = queue.map(post => {
+    const isSoon = post.sched_time <= addMinutes(currentTime, 30) && post.sched_time >= currentTime;
+    const urlShort = post.url.replace('https://observatorconstanta.ro', '...');
+    return `
+    <div class="queue-item ${isSoon ? 'soon' : ''}" id="qi-${post.id}">
+      <div class="qi-header">
+        <div class="qi-time">${post.sched_time}</div>
+        <div style="flex:1; min-width:0">
+          <div class="qi-desc">${post.description || '(fără descriere)'}</div>
+          <div class="qi-url">${urlShort}</div>
+        </div>
+      </div>
+      <div class="qi-actions">
+        <button class="qi-action post" onclick="postNow(${post.id})">▶ Postează acum</button>
+        <button class="qi-action edit" onclick="toggleEdit(${post.id})">✏️ Editează</button>
+        <button class="qi-action delete" onclick="deletePost(${post.id})">🗑️ Șterge</button>
+      </div>
+      <div class="qi-edit-form" id="edit-${post.id}">
+        <div class="form-group">
+          <label>Descriere</label>
+          <textarea id="edit-desc-${post.id}" rows="3">${post.description || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Ora</label>
+          <input type="time" id="edit-time-${post.id}" value="${post.sched_time}">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-blue" onclick="saveEdit(${post.id})" style="flex:1">💾 Salvează</button>
+          <button class="btn btn-secondary" onclick="toggleEdit(${post.id})" style="flex:1">Anulează</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addMinutes(timeStr, mins) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const total = h * 60 + m + mins;
+  const nh = Math.floor(total / 60) % 24;
+  const nm = total % 60;
+  return `${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')}`;
+}
+
+function toggleEdit(id) {
+  const form = document.getElementById(`edit-${id}`);
+  const item = document.getElementById(`qi-${id}`);
+  const isOpen = form.classList.contains('open');
+  form.classList.toggle('open', !isOpen);
+  item.classList.toggle('editing', !isOpen);
+}
+
+async function saveEdit(id) {
+  const description = document.getElementById(`edit-desc-${id}`).value.trim();
+  const sched_time = document.getElementById(`edit-time-${id}`).value;
+  try {
+    await fetch(`${API}/api/queue/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description, sched_time })
+    });
+    await loadQueue();
+    toast('✅ Salvat!', 'success');
+  } catch(e) {
+    toast('Eroare: ' + e.message, 'error');
+  }
+}
+
+async function deletePost(id) {
+  if (!confirm('Ștergi acest post?')) return;
+  await fetch(`${API}/api/queue/${id}`, { method: 'DELETE' });
+  await loadQueue();
+  toast('🗑️ Șters!');
+}
+
+async function postNow(id) {
+  if (!confirm('Postezi ACUM pe Facebook?')) return;
+  try {
+    const r = await fetch(`${API}/api/post-now/${id}`, { method: 'POST' });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    await loadQueue();
+    toast('🚀 Postat pe Facebook!', 'success');
+  } catch(e) {
+    toast('Eroare: ' + e.message, 'error');
+  }
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const r = await fetch(`${API}/api/history`);
+  const history = await r.json();
+  const container = document.getElementById('historyList');
+
+  if (!history.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🕓</div><h3>Niciun post încă</h3></div>`;
+    return;
+  }
+
+  container.innerHTML = history.map(h => {
+    const dt = new Date(h.posted_at);
+    const timeStr = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    return `
+    <div class="hist-item">
+      <div class="hist-time">✅ Postat la ${timeStr} &bull; ${dt.toLocaleDateString('ro-RO')}</div>
+      <div class="hist-desc">${h.description || '(fără descriere)'}</div>
+      <div class="hist-url">${h.url}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
