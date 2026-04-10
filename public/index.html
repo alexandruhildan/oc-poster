@@ -429,9 +429,10 @@
     </div>
 
     <div class="form-group">
-      <label>Ora programată</label>
-      <div class="time-row">
-        <input type="time" id="timeInput">
+      <label>Data și ora programată</label>
+      <div class="time-row" style="gap:8px">
+        <input type="date" id="dateInput" style="flex:1">
+        <input type="time" id="timeInput" style="flex:1">
       </div>
       <div class="quick-times" id="quickTimes"></div>
     </div>
@@ -477,6 +478,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── Clock ─────────────────────────────────────────────────────────────────────
+function todayStr() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
+
 function startClock() {
   function tick() {
     const now = new Date();
@@ -505,9 +511,13 @@ function setSmartTime() {
   let m = now.getMinutes();
 
   // Next full hour
-  h = m >= 1 ? h + 1 : h;
-  if (h >= 24) h = 0;
+  if (m >= 1) h = h + 1;
+  
+  let d = new Date(now);
+  if (h >= 24) { h = 0; d.setDate(d.getDate() + 1); }
 
+  const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('dateInput').value = dateStr;
   document.getElementById('timeInput').value = `${String(h).padStart(2,'0')}:00`;
 }
 
@@ -581,20 +591,22 @@ async function addToQueue() {
   const url = document.getElementById('urlInput').value.trim();
   const description = document.getElementById('descInput').value.trim();
   const sched_time = document.getElementById('timeInput').value;
+  const sched_date = document.getElementById('dateInput').value;
 
   if (!url) { toast('URL lipsă!', 'error'); return; }
   if (!description) { toast('Generează sau scrie o descriere!', 'error'); return; }
   if (!sched_time) { toast('Alege ora!', 'error'); return; }
+  if (!sched_date) { toast('Alege data!', 'error'); return; }
 
   // Check for conflicts
-  const conflict = queue.find(p => p.sched_time === sched_time);
-  if (conflict && !confirm(`Există deja un post la ${sched_time}. Continui?`)) return;
+  const conflict = queue.find(p => p.sched_time === sched_time && p.sched_date === sched_date);
+  if (conflict && !confirm(`Există deja un post la ${sched_date} ${sched_time}. Continui?`)) return;
 
   try {
     const r = await fetch(`${API}/api/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, description, sched_time })
+      body: JSON.stringify({ url, description, sched_time, sched_date })
     });
     const data = await r.json();
     if (data.error) throw new Error(data.error);
@@ -607,7 +619,7 @@ async function addToQueue() {
     renderQuickTimes();
 
     await loadQueue();
-    toast(`✅ Programat la ${sched_time}!`, 'success');
+    toast(`✅ Programat la ${sched_date} ${sched_time}!`, 'success');
     switchTab('queue');
   } catch(e) {
     toast('Eroare: ' + e.message, 'error');
@@ -658,7 +670,7 @@ function renderQueue() {
     return `
     <div class="queue-item ${isSoon ? 'soon' : ''}" id="qi-${post.id}">
       <div class="qi-header">
-        <div class="qi-time">${post.sched_time}</div>
+        <div class="qi-time">${post.sched_date === todayStr() ? '' : post.sched_date.slice(5) + ' '}${post.sched_time}</div>
         <div style="flex:1; min-width:0">
           <div class="qi-desc">${post.description || '(fără descriere)'}</div>
           <div class="qi-url">${urlShort}</div>
@@ -674,9 +686,9 @@ function renderQueue() {
           <label>Descriere</label>
           <textarea id="edit-desc-${post.id}" rows="3">${post.description || ''}</textarea>
         </div>
-        <div class="form-group">
-          <label>Ora</label>
-          <input type="time" id="edit-time-${post.id}" value="${post.sched_time}">
+        <div class="form-group" style="display:flex;gap:8px">
+          <div style="flex:1"><label>Data</label><input type="date" id="edit-date-${post.id}" value="${post.sched_date}"></div>
+          <div style="flex:1"><label>Ora</label><input type="time" id="edit-time-${post.id}" value="${post.sched_time}"></div>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-blue" onclick="saveEdit(${post.id})" style="flex:1">💾 Salvează</button>
@@ -706,11 +718,12 @@ function toggleEdit(id) {
 async function saveEdit(id) {
   const description = document.getElementById(`edit-desc-${id}`).value.trim();
   const sched_time = document.getElementById(`edit-time-${id}`).value;
+  const sched_date = document.getElementById(`edit-date-${id}`).value;
   try {
     await fetch(`${API}/api/queue/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description, sched_time })
+      body: JSON.stringify({ description, sched_time, sched_date })
     });
     await loadQueue();
     toast('✅ Salvat!', 'success');
