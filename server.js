@@ -205,23 +205,34 @@ cron.schedule('* * * * *', () => {
 
 
 
-// ── API: Get Facebook scheduled posts ─────────────────────────────────────────
+// ── API: Get Facebook scheduled posts (with pagination) ───────────────────────
 app.get('/api/fb-scheduled', async (req, res) => {
   try {
-    const r = await fetch(
-      `https://graph.facebook.com/v19.0/${FB_PAGE_ID}/scheduled_posts?fields=message,scheduled_publish_time,permalink_url&access_token=${FB_PAGE_TOKEN}`
-    );
-    const data = await r.json();
-    if (data.error) throw new Error(data.error.message);
+    let allPosts = [];
+    let url = `https://graph.facebook.com/v19.0/${FB_PAGE_ID}/scheduled_posts?fields=message,scheduled_publish_time,permalink_url&limit=100&access_token=${FB_PAGE_TOKEN}`;
     
-    const posts = (data.data || []).map(p => ({
-      id: p.id,
-      message: p.message || '',
-      scheduled_time: new Date(p.scheduled_publish_time * 1000).toISOString(),
-      permalink_url: p.permalink_url || '',
-      source: 'facebook'
-    }));
-    res.json(posts);
+    // Fetch all pages
+    while (url) {
+      const r = await fetch(url);
+      const data = await r.json();
+      if (data.error) throw new Error(data.error.message);
+      
+      const posts = (data.data || []).map(p => ({
+        id: p.id,
+        message: p.message || '',
+        scheduled_time: new Date(p.scheduled_publish_time * 1000).toISOString(),
+        permalink_url: p.permalink_url || '',
+        source: 'facebook'
+      }));
+      allPosts = allPosts.concat(posts);
+      
+      // Next page?
+      url = data.paging?.next || null;
+    }
+    
+    // Sort by scheduled time
+    allPosts.sort((a, b) => new Date(a.scheduled_time) - new Date(b.scheduled_time));
+    res.json(allPosts);
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
