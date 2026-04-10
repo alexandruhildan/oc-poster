@@ -383,9 +383,47 @@
       color: #795548;
       margin-bottom: 14px;
     }
+
+    /* ── Auth ── */
+    #authScreen {
+      position: fixed;
+      inset: 0;
+      background: var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      flex-direction: column;
+      gap: 20px;
+    }
+    #authScreen h2 { color: white; font-size: 22px; }
+    #authScreen p { color: rgba(255,255,255,0.8); font-size: 14px; }
+    #pinInput {
+      width: 200px;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 24px;
+      text-align: center;
+      letter-spacing: 8px;
+      outline: none;
+    }
+    #authError { color: rgba(255,255,255,0.9); font-size: 13px; min-height: 20px; }
   </style>
 </head>
 <body>
+
+
+<div id="authScreen">
+  <div style="text-align:center">
+    <div style="font-size:48px">📰</div>
+    <h2>OC Poster</h2>
+    <p>Introdu PIN-ul de acces</p>
+  </div>
+  <input type="password" id="pinInput" maxlength="10" placeholder="••••" 
+    oninput="checkPin(this.value)" autocomplete="off">
+  <div id="authError"></div>
+</div>
 
 <header>
   <div class="header-row">
@@ -462,11 +500,42 @@
 <script>
 const API = '';
 
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function checkPin(val) {
+  if (val.length < 4) return;
+  try {
+    const r = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: val })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      sessionStorage.setItem('auth', '1');
+      document.getElementById('authScreen').style.display = 'none';
+    } else {
+      document.getElementById('authError').textContent = '❌ PIN greșit';
+      document.getElementById('pinInput').value = '';
+      setTimeout(() => document.getElementById('authError').textContent = '', 1500);
+    }
+  } catch(e) {}
+}
+
+function checkAuth() {
+  if (sessionStorage.getItem('auth') === '1') {
+    document.getElementById('authScreen').style.display = 'none';
+  } else {
+    setTimeout(() => document.getElementById('pinInput').focus(), 100);
+  }
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let queue = [];
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js');
   }
