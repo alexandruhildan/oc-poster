@@ -164,11 +164,11 @@ app.post('/api/post-now/:id', async (req, res) => {
 
 // ── Facebook API ───────────────────────────────────────────────────────────────
 async function postToFacebook(post) {
-  const message = `${post.description}\n\n${post.url}`;
+  
   const r = await fetch(`https://graph.facebook.com/v19.0/${FB_PAGE_ID}/feed`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, access_token: FB_PAGE_TOKEN })
+    body: JSON.stringify({ message: post.description, link: post.url, access_token: FB_PAGE_TOKEN })
   });
   const data = await r.json();
   if (data.error) throw new Error(`FB: ${data.error.message}`);
