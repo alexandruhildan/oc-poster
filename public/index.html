@@ -384,6 +384,26 @@
       margin-bottom: 14px;
     }
 
+
+    /* ── Facebook scheduled posts ── */
+    .queue-item.fb-scheduled {
+      border-left-color: var(--blue);
+      opacity: 0.9;
+    }
+    .qi-time.fb { background: var(--blue); }
+    .qi-source {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 4px 6px;
+    }
     /* ── Auth ── */
     #authScreen {
       position: fixed;
@@ -532,6 +552,7 @@ function checkAuth() {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let queue = [];
+let fbScheduled = [];
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -698,8 +719,12 @@ async function addToQueue() {
 // ── Load & render queue ───────────────────────────────────────────────────────
 async function loadQueue() {
   try {
-    const r = await fetch(`${API}/api/queue`);
-    queue = await r.json();
+    const [r1, r2] = await Promise.all([
+      fetch(`${API}/api/queue`),
+      fetch(`${API}/api/fb-scheduled`)
+    ]);
+    queue = await r1.json();
+    fbScheduled = await r2.json().catch(() => []);
     renderQueue();
     updateBadge();
   } catch(e) {
@@ -720,20 +745,11 @@ function updateBadge() {
 
 function renderQueue() {
   const container = document.getElementById('queueList');
-  if (!queue.length) {
-    container.innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">📭</div>
-        <h3>Coada e goală</h3>
-        <p>Adaugă articole din tab-ul "Adaugă"</p>
-      </div>`;
-    return;
-  }
-
   const now = new Date();
   const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-  container.innerHTML = queue.map(post => {
+  // OC Poster queue items
+  const myItems = queue.map(post => {
     const isSoon = post.sched_time <= addMinutes(currentTime, 30) && post.sched_time >= currentTime;
     const urlShort = post.url.replace('https://observatorconstanta.ro', '...');
     return `
@@ -766,6 +782,39 @@ function renderQueue() {
       </div>
     </div>`;
   }).join('');
+
+  // Facebook scheduled posts by others
+  const fbItems = fbScheduled.map(post => {
+    const dt = new Date(post.scheduled_time);
+    const dateStr = `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}`;
+    const timeStr = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    const msgShort = post.message.length > 80 ? post.message.slice(0, 80) + '...' : post.message;
+    return `
+    <div class="queue-item fb-scheduled">
+      <div class="qi-header">
+        <div class="qi-time fb">${dateStr} ${timeStr}</div>
+        <div style="flex:1; min-width:0">
+          <div class="qi-desc">${msgShort || '(fără text)'}</div>
+          <div class="qi-source">📘 Programat manual pe Facebook</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (!queue.length && !fbScheduled.length) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">📭</div>
+        <h3>Coada e goală</h3>
+        <p>Adaugă articole din tab-ul "Adaugă"</p>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  if (myItems) html += `<div class="section-label">🔴 Programate prin OC Poster</div>${myItems}`;
+  if (fbItems) html += `<div class="section-label" style="margin-top:8px">📘 Programate manual pe Facebook</div>${fbItems}`;
+  container.innerHTML = html;
 }
 
 function addMinutes(timeStr, mins) {
